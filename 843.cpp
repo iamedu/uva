@@ -31,7 +31,7 @@ signature calc_signature(string s) {
 
 	sort(signature.begin(), signature.end());
 
-	sig_cache[s];
+	sig_cache[s] = signature;
 
 	return signature;
 }
@@ -55,7 +55,9 @@ int decrypt(const string s, map<string, char> &decrypted, const pkey &old_key, p
 
 	signature sig = calc_signature(word);
 
-	if(classes.find(sig) == classes.end()) return -1;
+	if(classes.find(sig) == classes.end()) {
+		return -1;
+	}
 
 	vector<string> words = classes[sig];
 
@@ -81,7 +83,8 @@ int decrypt(const string s, map<string, char> &decrypted, const pkey &old_key, p
 		}
 	}
 
-
+	if(classes.find(sig) == classes.end()) {
+	}
 	return -1;
 }
 
