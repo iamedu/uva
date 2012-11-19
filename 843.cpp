@@ -46,26 +46,6 @@ signature calc_signature(string word) {
 	return result;
 }
 
-string print_pkey(pkey key) {
-	stringstream buff;
-	string result;
-
-	buff << "[";
-
-	for(int i = 0; i < 128; i++) {
-		if(key[i]) {
-			buff << char(i) << "->" << key[i] << ",";
-		}
-	}
-
-	buff << "]";
-
-	buff >> result;
-
-	return result;
-}
-
-
 pkey decrypt(lp_queue words, dictionary dict, pkey current, bool *result) {
 	pkey key(128);
 
