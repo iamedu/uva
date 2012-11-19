@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <queue>
 #include <vector>
 #include <set>
 #include <map>
@@ -13,6 +14,13 @@ typedef vector<char> pkey;
 
 map<string, signature> sig_cache;
 map< signature, vector< string > > classes;
+
+class length_comparison {
+public:
+	bool operator() (const string &lhs, const string &rhs) {
+		return lhs.size() < rhs.size();
+	}
+};
 
 signature calc_signature(string s) {
 
@@ -36,20 +44,17 @@ signature calc_signature(string s) {
 	return signature;
 }
 
-int decrypt(const string s, map<string, char> &decrypted, const pkey &old_key, pkey &key) {
-	if(s.length() == 0) {
+int decrypt(priority_queue<string, vector<string>, length_comparison> &s, vector<bool> used, map<string, char> &decrypted, const pkey &old_key, pkey &key) {
+	if(s.size() == 0) {
 		copy(old_key.begin(), old_key.end(), key.begin());
 		return 0;
 	}
 
-	int pos = s.find(" ");
-	if(pos == -1) pos = s.size();
-
-	string word = s.substr(0, pos);
-	string next = (pos + 1 < s.length())?s.substr(pos + 1):"";
+	string word = s.top();
+	s.pop();
 
 	if(decrypted.find(word) != decrypted.end()) {
-		return decrypt(next, decrypted, old_key, key);
+		return decrypt(s, used, decrypted, old_key, key);
 	}
 
 
@@ -69,6 +74,8 @@ int decrypt(const string s, map<string, char> &decrypted, const pkey &old_key, p
 		for(i = 0; i < word.size(); i++) {
 			char word_char = word[i];
 			char possible_char = possibility[i];
+			bool char_used = used[possible_char];
+			if(old_key[word_char] == 0 && char_used) break;
 			if(old_key[word_char] == 0 || possible_key[word_char] == possible_char) {
 				possible_key[word_char] = possible_char;
 			}
@@ -76,15 +83,20 @@ int decrypt(const string s, map<string, char> &decrypted, const pkey &old_key, p
 		}
 		if(i == word.size()) {
 			decrypted[word] = 1;
-			if(decrypt(next, decrypted, possible_key, key) == 0) {
+			vector<bool> new_used(128);
+			for(int j = 0; j < 128; j++) new_used[j] = false;
+			for(int j = 1; j < 128; j++) {
+				if(possible_key[j]) {
+					new_used[possible_key[j]] = true;
+				}
+			}
+			if(decrypt(s, new_used, decrypted, possible_key, key) == 0) {
 				return 0;
 			}
 			decrypted.erase(decrypted.find(word));
 		}
 	}
 
-	if(classes.find(sig) == classes.end()) {
-	}
 	return -1;
 }
 
@@ -107,12 +119,24 @@ int main() {
 
 	while(cin.peek() != '\n' && !cin.eof()) {
 		char tmp[182];
+		vector<bool> used(128);
 		map<string, char> decrypted;
 		pkey key(128);
 		fill(key.begin(), key.end(), 0);
+		fill(used.begin(), used.end(), false);
 		cin.getline(tmp, 182, '\n');
 		string s = tmp;
-		if(decrypt(s, decrypted, nkey, key) == -1) {
+		stringstream ss(s);
+		priority_queue<string, vector<string>, length_comparison> pq;
+
+		while(ss.peek() != '\n' && !ss.eof()) {
+			string st;
+			ss >> st;
+			ss.ignore(100, ' ');
+			pq.push(st);
+		}
+
+		if(decrypt(pq, used, decrypted, nkey, key) == -1) {
 			fill(key.begin(), key.end(), '*');
 		}
 		key[' '] = ' ';
